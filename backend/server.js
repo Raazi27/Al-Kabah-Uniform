@@ -33,8 +33,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/otp', otpRoutes);
 
 // Health Check
-app.get('/', (req, res) => {
-    res.send('Tailoring System Backend Running');
+app.get('/api', (req, res) => {
+    res.send('Al-Kabah API Backend Running');
 });
 
 app.get('/api/test', (req, res) => {

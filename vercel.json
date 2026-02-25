@@ -1,18 +1,20 @@
 {
     "version": 2,
     "functions": {
-        "backend/server.js": {
+        "api/index.js": {
             "runtime": "@vercel/node"
         }
     },
     "rewrites": [
         {
             "source": "/api/(.*)",
-            "destination": "/backend/server.js"
+            "destination": "/api/index.js"
         },
         {
-            "source": "/(.*)",
+            "source": "/((?!api/).*)",
             "destination": "/frontend/dist/$1"
         }
-    ]
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
 }
