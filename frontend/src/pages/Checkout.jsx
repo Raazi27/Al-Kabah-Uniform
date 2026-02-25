@@ -29,7 +29,7 @@ const Checkout = () => {
             const token = localStorage.getItem('token');
             const customerId = user.role === 'customer' ? user._id : null;
 
-            await axios.post('http://localhost:5000/api/invoices', {
+            await axios.post('https://al-kabah-uniform.vercel.app/api/invoices', {
                 items: cart.map(item => ({
                     productId: item._id, // Products page sends _id
                     name: item.name,

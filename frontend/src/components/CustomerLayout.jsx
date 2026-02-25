@@ -124,7 +124,7 @@ const CustomerLayout = () => {
                                     <div className="w-full h-full rounded-[10px] bg-stone-100 dark:bg-[#1a2332] p-0.5 overflow-hidden">
                                         {user?.profilePicture ? (
                                             <img
-                                                src={`http://localhost:5000/${user.profilePicture.replace(/\\/g, '/')}`}
+                                                src={`https://al-kabah-uniform.vercel.app/${user.profilePicture.replace(/\\/g, '/')}`}
                                                 alt="User"
                                                 className="w-full h-full object-cover rounded-[8px]"
                                             />

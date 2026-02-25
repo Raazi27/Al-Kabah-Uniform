@@ -53,7 +53,7 @@ const Login = () => {
     const [newPassword, setNewPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
-    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `http://${window.location.hostname}:5000`;
+    const API_BASE = window.location.hostname === 'localhost' ? 'https://al-kabah-uniform.vercel.app' : `http://${window.location.hostname}:5000`;
 
     // Theme State
     const [theme, setTheme] = useState(() => {

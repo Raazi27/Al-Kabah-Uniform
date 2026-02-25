@@ -13,7 +13,7 @@ const FeedbackForm = ({ orderId, onFeedbackSubmitted }) => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/invoices/${orderId}/feedback`, { rating, feedback }, {
+            await axios.put(`https://al-kabah-uniform.vercel.app/api/invoices/${orderId}/feedback`, { rating, feedback }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('Thank you for your feedback!');

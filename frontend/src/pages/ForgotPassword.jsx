@@ -42,7 +42,7 @@ const ForgotPassword = () => {
         setMessage('');
 
         try {
-            await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
+            await axios.post('https://al-kabah-uniform.vercel.app/api/auth/forgot-password', { email });
             setMessage('OTP sent to your email!');
             setStep(2);
         } catch (err) {
@@ -59,7 +59,7 @@ const ForgotPassword = () => {
         setMessage('');
 
         try {
-            await axios.post('http://localhost:5000/api/auth/reset-password', { email, otp, newPassword });
+            await axios.post('https://al-kabah-uniform.vercel.app/api/auth/reset-password', { email, otp, newPassword });
             setMessage('Password reset successful! Redirecting to login...');
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {

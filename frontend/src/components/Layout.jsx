@@ -175,7 +175,7 @@ const Layout = () => {
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold text-xs shadow-md border-2 border-[#1e1b4b] overflow-hidden">
                                             {user?.profilePicture ? (
                                                 <img
-                                                    src={`http://localhost:5000/${user.profilePicture.replace(/\\/g, '/')}`}
+                                                    src={`https://al-kabah-uniform.vercel.app/${user.profilePicture.replace(/\\/g, '/')}`}
                                                     alt="User"
                                                     className="w-full h-full object-cover"
                                                 />
@@ -249,7 +249,7 @@ const Header = ({ user, logout, toggleSidebar, theme, toggleTheme }) => {
                     <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs overflow-hidden border border-primary-200 dark:border-primary-800">
                         {user?.profilePicture ? (
                             <img
-                                src={`http://localhost:5000/${user.profilePicture.replace(/\\/g, '/')}`}
+                                src={`https://al-kabah-uniform.vercel.app/${user.profilePicture.replace(/\\/g, '/')}`}
                                 alt="User"
                                 className="w-full h-full object-cover"
                             />

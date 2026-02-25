@@ -67,7 +67,7 @@ const Tailoring = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:5000/api/tailoring', {
+            await axios.post('https://al-kabah-uniform.vercel.app/api/tailoring', {
                 customerId: selectedCustomer._id,
                 gender,
                 measurements,

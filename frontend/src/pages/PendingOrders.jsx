@@ -28,12 +28,12 @@ const PendingOrders = () => {
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
             // Fetch Invoice Orders
-            const invoiceRes = await axios.get('http://localhost:5000/api/invoices/pending', { headers });
+            const invoiceRes = await axios.get('https://al-kabah-uniform.vercel.app/api/invoices/pending', { headers });
             let allOrders = invoiceRes.data.map(o => ({ ...o, orderType: 'invoice' }));
 
             // If customer, also fetch tailoring orders
             if (isCustomer) {
-                const tailoringRes = await axios.get('http://localhost:5000/api/tailoring', { headers });
+                const tailoringRes = await axios.get('https://al-kabah-uniform.vercel.app/api/tailoring', { headers });
                 const tailoringOrders = tailoringRes.data.map(o => ({ ...o, orderType: 'tailoring', invoiceId: o._id.slice(-6).toUpperCase() }));
                 allOrders = [...allOrders, ...tailoringOrders];
             }
@@ -49,7 +49,7 @@ const PendingOrders = () => {
     const updateStatus = async (id, newStatus) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/invoices/${id}/status`, {
+            await axios.put(`https://al-kabah-uniform.vercel.app/api/invoices/${id}/status`, {
                 status: newStatus,
                 isPaid: newStatus === 'Delivered' || newStatus === 'Paid'
             }, {

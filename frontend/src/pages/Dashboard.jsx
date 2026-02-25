@@ -110,7 +110,7 @@ const Dashboard = () => {
     const isAdmin = user?.role === 'admin';
     const isCustomer = user?.role === 'customer';
     const navigate = useNavigate();
-    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `http://${window.location.hostname}:5000`;
+    const API_BASE = window.location.hostname === 'localhost' ? 'https://al-kabah-uniform.vercel.app' : `http://${window.location.hostname}:5000`;
 
     const [stats, setStats] = useState({
         sales: 0,

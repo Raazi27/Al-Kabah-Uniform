@@ -48,7 +48,7 @@ const Reports = () => {
     const fetchReportData = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:5000/api/stats/reports');
+            const res = await axios.get('https://al-kabah-uniform.vercel.app/api/stats/reports');
             setReportData(res.data);
             setLoading(false);
         } catch (err) {
@@ -64,7 +64,7 @@ const Reports = () => {
     const handleReset = async () => {
         if (window.confirm('Are you sure you want to reset all reports? This will delete all invoices and orders permanently.')) {
             try {
-                await axios.delete('http://localhost:5000/api/stats/reset');
+                await axios.delete('https://al-kabah-uniform.vercel.app/api/stats/reset');
                 alert('Reports data has been reset.');
                 fetchReportData();
             } catch (err) {
@@ -76,7 +76,7 @@ const Reports = () => {
 
     const handleExport = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/stats/export?month=${exportDate.month}&year=${exportDate.year}`, {
+            const res = await axios.get(`https://al-kabah-uniform.vercel.app/api/stats/export?month=${exportDate.month}&year=${exportDate.year}`, {
                 responseType: 'blob'
             });
             const url = window.URL.createObjectURL(new Blob([res.data]));
