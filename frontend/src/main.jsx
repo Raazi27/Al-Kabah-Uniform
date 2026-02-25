@@ -18,6 +18,7 @@ import PendingOrders from './pages/PendingOrders'
 import Profile from './pages/Profile'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <BrowserRouter>
             <AuthProvider>
                 <CartProvider>
+                    <SpeedInsights />
                     <Routes>
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
