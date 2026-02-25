@@ -1,23 +1,21 @@
-const mongoose = require('mongoose');
-const User = require('./models/User');
-const dotenv = require('dotenv');
+import mongoose from 'mongoose';
+import User from './models/User.js';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGO_URI)
     .then(async () => {
         console.log('MongoDB Connected');
 
-        const email = 'farmanraazi2006@gmail.com';
-        const password = 'Raazi@26';
+        const email = process.env.ADMIN_EMAIL;
+        const password = process.env.ADMIN_PASSWORD;
 
         let admin = await User.findOne({ role: 'admin' });
 
         if (admin) {
             console.log('Updating existing admin...');
+            admin.name = 'Farman Raazi';
             admin.email = email;
             admin.password = password; // Schema pre-save will hash this
             await admin.save();
@@ -34,8 +32,6 @@ mongoose.connect(process.env.MONGO_URI, {
             console.log('Admin user created successfully');
         }
 
-        console.log('Email:', email);
-        console.log('Password:', password);
         process.exit();
     })
     .catch(err => {

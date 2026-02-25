@@ -1,9 +1,11 @@
-const express = require('express');
+import express from 'express';
+import Customer from '../models/Customer.js';
+import Counter from '../models/Counter.js';
+import User from '../models/User.js';
+import { verifyToken, isBilling, isAdmin } from '../middleware/auth.js';
+import bwipjs from 'bwip-js';
+
 const router = express.Router();
-const Customer = require('../models/Customer');
-const Counter = require('../models/Counter');
-const { verifyToken, isBilling, isAdmin } = require('../middleware/auth');
-const bwipjs = require('bwip-js');
 
 // Add Customer
 router.post('/', async (req, res) => {
@@ -15,8 +17,31 @@ router.post('/', async (req, res) => {
         const customerId = 'CUST' + counter.seq.toString().padStart(4, '0');
         const barcode = customerId;
 
-        const customer = new Customer({ customerId, barcode, name, phone, email, address, measurements });
+        // Check if a User with this email already exists
+        let userId = undefined;
+        if (email) {
+            const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+            if (existingUser) {
+                userId = existingUser._id;
+            }
+        }
+
+        const customer = new Customer({
+            customerId,
+            barcode,
+            name,
+            phone,
+            email: email ? email.trim().toLowerCase() : undefined,
+            address,
+            measurements,
+            userId
+        });
         await customer.save();
+
+        if (userId) {
+            console.log(`Linked new customer ${customerId} to existing user ${userId}`);
+        }
+
         res.status(201).json(customer);
     } catch (err) {
         res.status(400).send(err.message);
@@ -87,4 +112,4 @@ router.get('/:id/barcode', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

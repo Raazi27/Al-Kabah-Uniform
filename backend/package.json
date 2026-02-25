@@ -2,6 +2,7 @@
   "name": "tailoring-system-backend",
   "version": "1.0.0",
   "description": "Backend for Tailoring & Billing System",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,11 +15,12 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.0.3",
+    "mongoose": "^8.0.0",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.1",
     "otp-generator": "^4.0.1",
-    "pdfkit": "^0.13.0"
+    "pdfkit": "^0.13.0",
+    "twilio": "^5.12.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

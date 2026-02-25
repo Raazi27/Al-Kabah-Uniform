@@ -30,8 +30,67 @@ ChartJS.register(
     Filler
 );
 
+import axios from 'axios';
+
 const Reports = () => {
     const [isDark, setIsDark] = useState(false);
+    const [reportData, setReportData] = useState({
+        revenueAnalytics: { labels: [], data: [] },
+        categoryData: { labels: [], data: [] },
+        recentTransactions: []
+    });
+    const [loading, setLoading] = useState(true);
+    const [exportDate, setExportDate] = useState({
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear()
+    });
+
+    const fetchReportData = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get('http://localhost:5000/api/stats/reports');
+            setReportData(res.data);
+            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching report data:', err);
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchReportData();
+    }, []);
+
+    const handleReset = async () => {
+        if (window.confirm('Are you sure you want to reset all reports? This will delete all invoices and orders permanently.')) {
+            try {
+                await axios.delete('http://localhost:5000/api/stats/reset');
+                alert('Reports data has been reset.');
+                fetchReportData();
+            } catch (err) {
+                console.error('Error resetting reports:', err);
+                alert('Failed to reset reports.');
+            }
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const res = await axios.get(`http://localhost:5000/api/stats/export?month=${exportDate.month}&year=${exportDate.year}`, {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Report_${exportDate.year}_${exportDate.month}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error('Error exporting report:', err);
+            alert('Failed to export report.');
+        }
+    };
 
     useEffect(() => {
         const checkDarkMode = () => {
@@ -90,13 +149,13 @@ const Reports = () => {
         }
     });
 
-    // Mock Data
+    // Dynamic Data
     const salesData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        labels: reportData.revenueAnalytics.labels,
         datasets: [
             {
                 label: 'Revenue (₹)',
-                data: [15000, 22000, 18000, 28000, 24000, 35000],
+                data: reportData.revenueAnalytics.data,
                 backgroundColor: isDark ? 'rgba(99, 102, 241, 0.8)' : 'rgba(79, 70, 229, 0.8)',
                 borderRadius: 4,
                 hoverBackgroundColor: isDark ? 'rgba(129, 140, 248, 1)' : 'rgba(67, 56, 202, 1)',
@@ -105,11 +164,11 @@ const Reports = () => {
     };
 
     const categoryData = {
-        labels: ['Uniforms', 'Suits', 'Fabrics', 'Alterations'],
+        labels: reportData.categoryData.labels,
         datasets: [
             {
                 label: 'Orders',
-                data: [45, 20, 15, 10],
+                data: reportData.categoryData.data,
                 backgroundColor: [
                     'rgba(244, 63, 94, 0.8)',   // Rose
                     'rgba(59, 130, 246, 0.8)',  // Blue
@@ -123,10 +182,10 @@ const Reports = () => {
     };
 
     const kpiStats = [
-        { label: 'Total Revenue', value: '₹1,42,000', change: '+12.5%', icon: FiDollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-900/20' },
-        { label: 'Total Orders', value: '384', change: '+8.2%', icon: FiShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/20' },
-        { label: 'New Customers', value: '142', change: '+5.4%', icon: FiUsers, color: 'text-purple-600', bg: 'bg-purple-100 dark:bg-purple-900/20' },
-        { label: 'Avg. Order Value', value: '₹2,450', change: '+2.1%', icon: FiTrendingUp, color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+        { label: 'Total Revenue', value: `₹${reportData.revenueAnalytics.data.reduce((a, b) => a + b, 0).toLocaleString()}`, change: 'Real-time', icon: FiDollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-900/20' },
+        { label: 'Total Invoices', value: reportData.recentTransactions.length, change: 'Lifetime', icon: FiShoppingBag, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/20' },
+        { label: 'Avg Sale', value: reportData.recentTransactions.length ? `₹${(reportData.revenueAnalytics.data.reduce((a, b) => a + b, 0) / reportData.recentTransactions.length).toFixed(0)}` : '₹0', change: 'Avg', icon: FiTrendingUp, color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+        { label: 'Categories', value: reportData.categoryData.labels.length, change: 'Count', icon: FiUsers, color: 'text-purple-600', bg: 'bg-purple-100 dark:bg-purple-900/20' },
     ];
 
     return (
@@ -138,12 +197,40 @@ const Reports = () => {
                     delay={50}
                     animateBy="words"
                 />
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm">
-                        <FiDownload /> Export CSV
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition shadow-lg shadow-primary-500/30">
-                        <FiDownload /> Download PDF
+                <div className="flex flex-wrap gap-3 items-center">
+                    <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 shadow-sm">
+                        <select
+                            value={exportDate.month}
+                            onChange={(e) => setExportDate({ ...exportDate, month: e.target.value })}
+                            className="bg-transparent text-slate-700 dark:text-slate-200 text-sm outline-none px-2 py-1"
+                        >
+                            {[...Array(12)].map((_, i) => (
+                                <option key={i + 1} value={i + 1}>
+                                    {new Date(0, i).toLocaleString('default', { month: 'short' })}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={exportDate.year}
+                            onChange={(e) => setExportDate({ ...exportDate, year: e.target.value })}
+                            className="bg-transparent text-slate-700 dark:text-slate-200 text-sm outline-none px-2 py-1"
+                        >
+                            {[2024, 2025, 2026].map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-2 px-3 py-1 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 transition"
+                        >
+                            <FiDownload /> Export
+                        </button>
+                    </div>
+                    <button
+                        onClick={handleReset}
+                        className="flex items-center gap-2 px-4 py-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-lg text-sm font-medium hover:bg-rose-100 dark:hover:bg-rose-900/30 transition shadow-sm"
+                    >
+                        Reset All Data
                     </button>
                 </div>
             </div>
@@ -220,27 +307,33 @@ const Reports = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                            {[1024, 1025, 1026, 1027, 1028].map((id, index) => (
-                                <tr key={id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                    <td className="p-4 pl-6 font-medium text-slate-700 dark:text-slate-200">#INV-{id}</td>
-                                    <td className="p-4 text-slate-600 dark:text-slate-400 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-400">
-                                            {String.fromCharCode(65 + index)}
-                                        </div>
-                                        Customer {String.fromCharCode(65 + index)}
-                                    </td>
-                                    <td className="p-4 text-slate-500 dark:text-slate-500 text-sm">Oct {12 + index}, 2023</td>
-                                    <td className="p-4 text-right font-medium text-slate-800 dark:text-white">₹{(1500 + index * 250).toLocaleString()}</td>
-                                    <td className="p-4 text-center">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${index % 2 === 0
+                            {reportData.recentTransactions.length > 0 ? (
+                                reportData.recentTransactions.map((inv, index) => (
+                                    <tr key={inv._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                        <td className="p-4 pl-6 font-medium text-slate-700 dark:text-slate-200">#{inv.invoiceId}</td>
+                                        <td className="p-4 text-slate-600 dark:text-slate-400 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                {inv.customerId?.name ? inv.customerId.name[0] : 'G'}
+                                            </div>
+                                            {inv.customerId?.name || 'Guest'}
+                                        </td>
+                                        <td className="p-4 text-slate-500 dark:text-slate-500 text-sm">{new Date(inv.invoiceDate).toLocaleDateString()}</td>
+                                        <td className="p-4 text-right font-medium text-slate-800 dark:text-white">₹{inv.grandTotal.toLocaleString()}</td>
+                                        <td className="p-4 text-center">
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${inv.status === 'Paid' || inv.status === 'Delivered'
                                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800'
                                                 : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800'
-                                            }`}>
-                                            {index % 2 === 0 ? 'Completed' : 'Pending'}
-                                        </span>
-                                    </td>
+                                                }`}>
+                                                {inv.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="p-8 text-center text-slate-400">No transactions found</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>

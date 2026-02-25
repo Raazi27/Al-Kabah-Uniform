@@ -1,18 +1,40 @@
-const express = require('express');
+import express from 'express';
+import Invoice from '../models/Invoice.js';
+import Product from '../models/Product.js';
+import Counter from '../models/Counter.js';
+import Customer from '../models/Customer.js';
+import User from '../models/User.js';
+import { verifyToken } from '../middleware/auth.js';
+import PDFDocument from 'pdfkit';
+import fs from 'fs';
+
+import jwt from 'jsonwebtoken';
+
 const router = express.Router();
-const Invoice = require('../models/Invoice');
-const Product = require('../models/Product');
-const Counter = require('../models/Counter');
-const { verifyToken } = require('../middleware/auth');
 
 // Create Invoice
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
     try {
         const { customerId, items, subtotal, tax, grandTotal, paymentMethod, discountPercentage, discountAmount } = req.body;
 
-        // items should be [{ productId, quantity, price, name }]
+        let finalCustomerId = customerId;
+        let finalCustomerName = req.body.customerName || 'Guest Customer';
 
-        // Validate stock & Calculate totals server-side (good practice, though we trust client for now)
+        // Try to identify customer from req.user (populated by verifyToken)
+        if (req.user) {
+            finalCustomerName = req.user.name || finalCustomerName;
+            if (req.user.role === 'customer') {
+                const customer = await Customer.findOne({ userId: req.user._id });
+                if (customer) {
+                    finalCustomerId = customer._id;
+                } else {
+                    // Fallback to userId if customer record doesn't exist yet
+                    finalCustomerId = req.user._id;
+                }
+            }
+        }
+
+        // Validate stock
         for (const item of items) {
             const product = await Product.findById(item.productId);
             if (!product) return res.status(404).json({ message: `Product ${item.name || 'Unknown'} not found` });
@@ -27,17 +49,18 @@ router.post('/', async (req, res) => {
         }
 
         // Generate Invoice ID
+        let invoiceId;
         try {
-            var counter = await Counter.findOneAndUpdate({ id: 'invoice' }, { $inc: { seq: 1 } }, { new: true, upsert: true });
+            const counter = await Counter.findOneAndUpdate({ id: 'invoice' }, { $inc: { seq: 1 } }, { new: true, upsert: true });
+            invoiceId = 'INV' + (counter.seq || '0').toString().padStart(4, '0');
         } catch (e) {
-            var counter = { seq: Date.now() }; // Fallback
+            invoiceId = 'INV' + Date.now().toString().slice(-4);
         }
-
-        const invoiceId = 'INV' + (counter.seq || '0').toString().padStart(4, '0');
 
         const invoice = new Invoice({
             invoiceId,
-            customerId: customerId || null, // Allow guest checkout
+            customerId: finalCustomerId || null,
+            customerName: finalCustomerName,
             items: items.map(i => ({
                 productId: i.productId,
                 name: i.name,
@@ -61,10 +84,38 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Get Pending Invoices (Admin/Billing only usually, but open for now or add middleware)
-router.get('/pending', async (req, res) => {
+// Get Pending Invoices (Filtered by customer if applicable)
+router.get('/pending', verifyToken, async (req, res) => {
     try {
-        const invoices = await Invoice.find({ status: 'Pending' }).populate('customerId').sort({ invoiceDate: -1 });
+        let query = { status: { $in: ['Pending', 'Paid'] } };
+
+        // If user is a customer, only show their invoices (including Delivered and Cancelled)
+        if (req.user.role === 'customer') {
+            query.status = { $in: ['Pending', 'Paid', 'Delivered', 'Cancelled'] };
+            const customer = await Customer.findOne({ userId: req.user._id });
+            if (!customer) return res.json([]);
+            query.customerId = customer._id;
+        }
+
+        const invoices = await Invoice.find(query).populate('customerId').sort({ invoiceDate: -1 });
+        res.json(invoices);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// Get Active Invoices for Tracking (Pending or Paid)
+router.get('/active', verifyToken, async (req, res) => {
+    try {
+        let query = { status: { $in: ['Pending', 'Paid'] } };
+
+        if (req.user.role === 'customer') {
+            const customer = await Customer.findOne({ userId: req.user._id });
+            if (!customer) return res.json([]);
+            query.customerId = customer._id;
+        }
+
+        const invoices = await Invoice.find(query).populate('customerId').sort({ invoiceDate: -1 });
         res.json(invoices);
     } catch (err) {
         res.status(500).send(err.message);
@@ -74,8 +125,16 @@ router.get('/pending', async (req, res) => {
 // Update Invoice Status
 router.put('/:id/status', async (req, res) => {
     try {
-        const { status } = req.body;
-        const invoice = await Invoice.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        const { status, isPaid } = req.body;
+        const update = { status };
+        if (isPaid !== undefined) update.isPaid = isPaid;
+
+        // If status is marked as 'Paid', also set isPaid to true
+        if (status === 'Paid') update.isPaid = true;
+        // If status is marked as 'Delivered', auto-mark as paid if requested or by default
+        if (status === 'Delivered') update.isPaid = true;
+
+        const invoice = await Invoice.findByIdAndUpdate(req.params.id, update, { new: true });
         if (!invoice) return res.status(404).send('Invoice not found');
         res.json(invoice);
     } catch (err) {
@@ -94,10 +153,29 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Generate PDF
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
+// Submit Feedback for Invoice
+router.put('/:id/feedback', verifyToken, async (req, res) => {
+    try {
+        const { rating, feedback } = req.body;
+        const invoice = await Invoice.findById(req.params.id);
 
+        if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+        if (invoice.status !== 'Delivered') {
+            return res.status(400).json({ message: 'Can only provide feedback for delivered orders' });
+        }
+
+        invoice.rating = rating;
+        invoice.feedback = feedback;
+        await invoice.save();
+
+        res.json({ message: 'Feedback submitted successfully', invoice });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
+// Generate PDF
 router.get('/:id/pdf', async (req, res) => {
     try {
         const invoice = await Invoice.findById(req.params.id).populate('customerId');
@@ -136,4 +214,4 @@ router.get('/:id/pdf', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

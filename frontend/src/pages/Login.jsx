@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiMail, FiLock, FiAlertCircle, FiStar, FiMapPin, FiPhone, FiInstagram, FiFacebook, FiTwitter, FiArrowRight, FiSun, FiMoon } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiMail, FiLock, FiAlertCircle, FiStar, FiMapPin, FiPhone, FiInstagram, FiFacebook, FiTwitter, FiArrowRight, FiSun, FiMoon, FiEye, FiEyeOff } from 'react-icons/fi';
 import SpotlightCard from '../components/react-bits/SpotlightCard';
 import BlurText from '../components/react-bits/BlurText';
 import Marquee from '../components/react-bits/Marquee';
@@ -42,7 +43,17 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Forgot Password Flow States
+    const [view, setView] = useState('login'); // 'login', 'forgot', 'otp', 'reset'
+    const [resetEmail, setResetEmail] = useState('');
+    const [otp, setOtp] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000' : `http://${window.location.hostname}:5000`;
 
     // Theme State
     const [theme, setTheme] = useState(() => {
@@ -67,12 +78,74 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
         const result = await login(email, password);
         if (result.success) {
             navigate('/');
         } else {
             setError(result.message);
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(resetEmail)) {
+            setError('Please enter a valid email address (e.g. name@domain.com)');
+            setLoading(false);
+            return;
+        }
+        try {
+            await axios.post(`${API_BASE}/api/auth/forgot-password`, { email: resetEmail });
+            setSuccess('OTP sent to your email.');
+            setView('otp');
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || err.response?.data || 'Failed to send OTP';
+            if (errorMsg.includes('Error sending email')) {
+                setError(`Could not reach ${resetEmail}. Please check if the email address is correct and try again.`);
+            } else if (errorMsg.includes('The domain') || errorMsg.includes('cannot receive emails')) {
+                setError(errorMsg);
+            } else {
+                setError(errorMsg);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = (e) => {
+        e.preventDefault();
+        if (otp.length === 6) {
+            setView('reset');
+            setSuccess('');
+        } else {
+            setError('Please enter a valid 6-digit OTP');
+        }
+    };
+
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            await axios.post(`${API_BASE}/api/auth/reset-password`, {
+                email: resetEmail,
+                otp,
+                newPassword
+            });
+            alert('Password reset successful! Please login with your new password.');
+            setView('login');
+            setEmail(resetEmail);
+            setResetEmail('');
+            setOtp('');
+            setNewPassword('');
+        } catch (err) {
+            setError(err.response?.data || 'Failed to reset password');
+        } finally {
             setLoading(false);
         }
     };
@@ -178,81 +251,214 @@ const Login = () => {
                 </div>
 
                 <div className="flex-1 w-full max-w-md z-10 relative">
-                    <SpotlightCard className="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/40 dark:border-slate-700 shadow-2xl p-8">
-                        <div className="text-center mb-8">
-                            <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Welcome Back</h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm">Please sign in to your dashboard</p>
-                        </div>
-
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 flex items-center gap-2 text-sm border border-red-100 dark:border-red-900/30"
-                            >
-                                <FiAlertCircle className="flex-shrink-0" />
-                                {error}
-                            </motion.div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email</label>
-                                <div className="relative">
-                                    <FiMail className="absolute left-3.5 top-3.5 text-slate-400" />
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-10 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white transition-all outline-none"
-                                        placeholder="name@example.com"
-                                        required
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
-                                <div className="relative">
-                                    <FiLock className="absolute left-3.5 top-3.5 text-slate-400" />
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white transition-all outline-none"
-                                        placeholder="••••••••"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between text-sm">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 bg-slate-50 dark:bg-slate-900" />
-                                    <span className="text-slate-500 dark:text-slate-400">Remember me</span>
-                                </label>
-                                <a href="#" className="text-primary-600 dark:text-primary-400 hover:underline font-medium">Forgot Password?</a>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {loading ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        Signing In...
+                    <SpotlightCard className="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-white/40 dark:border-slate-700 shadow-2xl p-8 overflow-hidden">
+                        <AnimatePresence mode="wait">
+                            {view === 'login' && (
+                                <motion.div
+                                    key="login"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{ duration: 0.3 }}
+                                >
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Welcome Back</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">Please sign in to your dashboard</p>
                                     </div>
-                                ) : 'Sign In'}
-                            </button>
-                        </form>
 
-                        <div className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                            Don't have an account?{' '}
-                            <Link to="/register" className="font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 hover:underline">
-                                Create free account
-                            </Link>
-                        </div>
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-6 flex items-center gap-2 text-sm border border-red-100 dark:border-red-900/30"
+                                        >
+                                            <FiAlertCircle className="flex-shrink-0" />
+                                            {error}
+                                        </motion.div>
+                                    )}
+
+                                    <form onSubmit={handleSubmit} className="space-y-5">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email</label>
+                                            <div className="relative">
+                                                <FiMail className="absolute left-3.5 top-3.5 text-slate-400" />
+                                                <input
+                                                    type="email"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    className="w-full pl-10 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white transition-all outline-none"
+                                                    placeholder="name@example.com"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
+                                            <div className="relative">
+                                                <FiLock className="absolute left-3.5 top-3.5 text-slate-400" />
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    className="w-full pl-10 pr-10 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-white transition-all outline-none"
+                                                    placeholder="••••••••"
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+                                                >
+                                                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-sm">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" className="rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 bg-slate-50 dark:bg-slate-900" />
+                                                <span className="text-slate-500 dark:text-slate-400">Remember me</span>
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setView('forgot'); setError(''); setSuccess(''); }}
+                                                className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                                            >
+                                                Forgot Password?
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            {loading ? 'Signing In...' : 'Sign In'}
+                                        </button>
+                                    </form>
+
+                                    <div className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                                        Don't have an account?{' '}
+                                        <Link to="/register" className="font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 hover:underline">
+                                            Create free account
+                                        </Link>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {view === 'forgot' && (
+                                <motion.div
+                                    key="forgot"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Forgot Password?</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">Enter your email to receive a reset OTP</p>
+                                    </div>
+
+                                    {error && <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-100">{error}</div>}
+
+                                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold dark:text-slate-300">Email Address</label>
+                                            <input
+                                                type="email"
+                                                value={resetEmail}
+                                                onChange={(e) => setResetEmail(e.target.value)}
+                                                className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
+                                                placeholder="name@example.com"
+                                                required
+                                            />
+                                        </div>
+                                        <button disabled={loading} className="w-full bg-primary-600 text-white font-bold py-3.5 rounded-xl">
+                                            {loading ? 'Sending...' : 'Send OTP'}
+                                        </button>
+                                        <button type="button" onClick={() => setView('login')} className="w-full text-slate-500 text-sm hover:underline">Back to Login</button>
+                                    </form>
+                                </motion.div>
+                            )}
+
+                            {view === 'otp' && (
+                                <motion.div
+                                    key="otp"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Verify OTP</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">OTP sent to {resetEmail}</p>
+                                    </div>
+
+                                    {success && <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm rounded-lg">{success}</div>}
+                                    {error && <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg">{error}</div>}
+
+                                    <form onSubmit={handleVerifyOTP} className="space-y-4">
+                                        <input
+                                            type="text"
+                                            maxLength="6"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            className="w-full p-4 text-center text-2xl font-bold tracking-[1em] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
+                                            placeholder="000000"
+                                            required
+                                        />
+                                        <button className="w-full bg-primary-600 text-white font-bold py-3.5 rounded-xl">Confirm OTP</button>
+                                        <div className="flex justify-between items-center text-sm px-2">
+                                            <button type="button" onClick={() => setView('forgot')} className="text-slate-500 hover:text-primary-600 hover:underline">Change Email</button>
+                                            <button type="button" onClick={() => setView('login')} className="text-slate-500 hover:text-primary-600 hover:underline">Back to Login</button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            )}
+
+                            {view === 'reset' && (
+                                <motion.div
+                                    key="reset"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="text-center mb-8">
+                                        <h3 className="text-2xl font-bold text-slate-800 dark:text-white">New Password</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 text-sm">Set your new password below</p>
+                                    </div>
+
+                                    {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+
+                                    <form onSubmit={handleResetPassword} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold dark:text-slate-300">New Password</label>
+                                            <div className="relative">
+                                                <FiLock className="absolute left-3.5 top-3.5 text-slate-400" />
+                                                <input
+                                                    type={showNewPassword ? "text" : "password"}
+                                                    value={newPassword}
+                                                    onChange={(e) => setNewPassword(e.target.value)}
+                                                    className="w-full pl-10 pr-10 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 dark:text-white"
+                                                    placeholder="••••••••"
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowNewPassword(!showNewPassword)}
+                                                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+                                                >
+                                                    {showNewPassword ? <FiEyeOff /> : <FiEye />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button disabled={loading} className="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-500/30">
+                                            {loading ? 'Updating...' : 'Reset Password'}
+                                        </button>
+                                        <button type="button" onClick={() => setView('otp')} className="w-full text-slate-500 text-sm hover:underline">Back to OTP Verification</button>
+                                    </form>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </SpotlightCard>
                 </div>
             </section>

@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import TailoringOrder from '../models/TailoringOrder.js';
+import Customer from '../models/Customer.js';
+import { verifyToken, isTailor, isAdmin } from '../middleware/auth.js';
+
 const router = express.Router();
-const TailoringOrder = require('../models/TailoringOrder');
-const Customer = require('../models/Customer');
-const { verifyToken, isTailor, isAdmin } = require('../middleware/auth');
 
 // Create Tailoring Order
 router.post('/', async (req, res) => {
@@ -43,7 +44,6 @@ router.put('/:id/status', async (req, res) => {
 });
 
 // Get Orders (Pending by default or all)
-// Get Orders (Pending by default or all)
 router.get('/', verifyToken, async (req, res) => {
     try {
         const { status, date } = req.query;
@@ -69,4 +69,4 @@ router.get('/', verifyToken, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

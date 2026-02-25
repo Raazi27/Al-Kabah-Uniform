@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-const verifyToken = (req, res, next) => {
+export const verifyToken = (req, res, next) => {
     const token = req.header('Authorization');
     if (!token) return res.status(401).send('Access Denied');
 
@@ -13,19 +13,19 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-const isAdmin = (req, res, next) => {
+export const isAdmin = (req, res, next) => {
+    console.log(`[AUTH] isAdmin check for user: ${req.user._id}, role: ${req.user.role}`);
     if (req.user.role !== 'admin') return res.status(403).send('Access Denied: Admin Only');
     next();
 };
 
-const isBilling = (req, res, next) => {
+export const isBilling = (req, res, next) => {
+    console.log(`[AUTH] isBilling check for user: ${req.user._id}, role: ${req.user.role}`);
     if (req.user.role !== 'billing' && req.user.role !== 'admin') return res.status(403).send('Access Denied: Billing/Admin Only');
     next();
 };
 
-const isTailor = (req, res, next) => {
+export const isTailor = (req, res, next) => {
     if (req.user.role !== 'tailor' && req.user.role !== 'admin') return res.status(403).send('Access Denied: Tailor/Admin Only');
     next();
 };
-
-module.exports = { verifyToken, isAdmin, isBilling, isTailor };

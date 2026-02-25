@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiUser, FiLock, FiMail, FiSun, FiMoon } from 'react-icons/fi';
+import { FiUser, FiLock, FiMail, FiSun, FiMoon, FiEye, FiEyeOff } from 'react-icons/fi';
 import axios from 'axios';
 
 const Register = () => {
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'customer' });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '', role: 'customer', otp: '' });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [isOtpSent, setIsOtpSent] = useState(false);
+    const [sendingOtp, setSendingOtp] = useState(false);
     const navigate = useNavigate();
 
     // Theme State
@@ -34,22 +38,53 @@ const Register = () => {
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+    const handleSendOtp = async () => {
+        setError('');
+        setSuccess('');
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(formData.email)) {
+            return setError('Please enter a valid email address first');
+        }
+
+        setSendingOtp(true);
+        try {
+            const res = await axios.post('http://localhost:5000/api/auth/register-otp', {
+                email: formData.email
+            });
+            setIsOtpSent(true);
+            setSuccess('Verification code sent to your email!');
+        } catch (err) {
+            const errorMsg = err.response?.data || 'Failed to send verification code';
+            setError(errorMsg);
+        } finally {
+            setSendingOtp(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         if (formData.password !== formData.confirmPassword) return setError("Passwords don't match");
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(formData.email)) {
+            return setError('Please enter a valid email address (e.g. name@domain.com)');
+        }
 
         try {
             await axios.post('http://localhost:5000/api/auth/register', {
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
-                role: formData.role
+                role: formData.role,
+                otp: formData.otp
             });
             setSuccess('Registration Successful! Redirecting to login...');
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
-            setError(err.response?.data || 'Registration failed');
+            const errorMsg = err.response?.data?.message || err.response?.data || 'Registration failed';
+            setError(errorMsg);
         }
     };
 
@@ -106,58 +141,115 @@ const Register = () => {
                             name="email"
                             type="email"
                             placeholder="Email Address"
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
+                            className="w-full pl-10 pr-24 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
                             value={formData.email}
                             onChange={handleChange}
                             required
+                            disabled={isOtpSent}
                         />
-                    </div>
-                    <div className="relative">
-                        <FiLock className="absolute left-3 top-3.5 text-gray-400" />
-                        <input
-                            name="password"
-                            type="password"
-                            placeholder="Password"
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-                    <div className="relative">
-                        <FiLock className="absolute left-3 top-3.5 text-gray-400" />
-                        <input
-                            name="confirmPassword"
-                            type="password"
-                            placeholder="Confirm Password"
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            required
-                        />
+                        {!isOtpSent && (
+                            <button
+                                type="button"
+                                onClick={handleSendOtp}
+                                disabled={sendingOtp}
+                                className="absolute right-2 top-2 bottom-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-md transition-colors disabled:bg-gray-400"
+                            >
+                                {sendingOtp ? 'Sending...' : 'Verify'}
+                            </button>
+                        )}
+                        {isOtpSent && (
+                            <button
+                                type="button"
+                                onClick={() => setIsOtpSent(false)}
+                                className="absolute right-2 top-2 bottom-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-md transition-colors"
+                            >
+                                Change
+                            </button>
+                        )}
                     </div>
 
-                    <div className="relative">
-                        <FiUser className="absolute left-3 top-3.5 text-gray-400" />
-                        <select
-                            name="role"
-                            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none text-gray-700 dark:text-white"
-                            value={formData.role}
-                            onChange={handleChange}
+                    {isOtpSent && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="space-y-5"
                         >
-                            <option value="customer">Customer</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                    </div>
+                            <div className="relative">
+                                <FiLock className="absolute left-3 top-3.5 text-gray-400" />
+                                <input
+                                    name="otp"
+                                    type="text"
+                                    placeholder="6-Digit Verification Code"
+                                    maxLength="6"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
+                                    value={formData.otp}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                        type="submit"
-                    >
-                        Sign Up
-                    </motion.button>
+                            <div className="relative">
+                                <FiLock className="absolute left-3 top-3.5 text-gray-400" />
+                                <input
+                                    name="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Password"
+                                    className="w-full pl-10 pr-10 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
+                            </div>
+                            <div className="relative">
+                                <FiLock className="absolute left-3 top-3.5 text-gray-400" />
+                                <input
+                                    name="confirmPassword"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    placeholder="Confirm Password"
+                                    className="w-full pl-10 pr-10 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-800 dark:text-white placeholder-gray-400"
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
+                            </div>
+
+                            <div className="relative">
+                                <FiUser className="absolute left-3 top-3.5 text-gray-400" />
+                                <select
+                                    name="role"
+                                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none text-gray-700 dark:text-white"
+                                    value={formData.role}
+                                    onChange={handleChange}
+                                >
+                                    <option value="customer">Customer</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform"
+                                type="submit"
+                            >
+                                Create Account
+                            </motion.button>
+                        </motion.div>
+                    )}
                 </form>
 
                 <div className="mt-6 text-center text-sm text-gray-600 dark:text-slate-400">

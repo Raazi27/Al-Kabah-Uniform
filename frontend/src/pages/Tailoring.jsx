@@ -206,7 +206,7 @@ const Tailoring = () => {
     return (
         <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-100px)]">
             {/* Left Column: Form */}
-            <div className="flex-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg dark:shadow-none border border-slate-100 dark:border-slate-700 transition-colors overflow-y-auto custom-scrollbar">
+            <div className="flex-1 bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-lg dark:shadow-none border border-slate-100 dark:border-slate-700 transition-colors lg:overflow-y-auto custom-scrollbar">
                 <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white flex items-center gap-2">
                     <FiScissors className="text-primary-500" /> New Tailoring Order
                 </h2>

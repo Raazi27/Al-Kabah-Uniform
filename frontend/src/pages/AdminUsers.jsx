@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { FiTrash2, FiShield, FiUser, FiEdit, FiX, FiCheck } from 'react-icons/fi';
+import { FiTrash2, FiShield, FiUser, FiEdit, FiX, FiCheck, FiEye, FiEyeOff, FiLock } from 'react-icons/fi';
 import SpotlightCard from '../components/react-bits/SpotlightCard';
 import BlurText from '../components/react-bits/BlurText';
 
@@ -13,6 +13,7 @@ const AdminUsers = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ name: '', email: '', role: '', password: '' });
+    const [showPassword, setShowPassword] = useState(false);
 
     const SUPER_ADMIN_EMAIL = 'farmanraazi2006@gmail.com';
     const isSuperAdmin = currentUser?.email === SUPER_ADMIN_EMAIL;
@@ -238,13 +239,23 @@ const AdminUsers = () => {
                                 )}
                                 <div>
                                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">New Password (Optional)</label>
-                                    <input
-                                        type="password"
-                                        className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-white"
-                                        placeholder="Leave blank to keep current"
-                                        value={formData.password}
-                                        onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                    />
+                                    <div className="relative">
+                                        <FiLock className="absolute left-3.5 top-3.5 text-slate-400" />
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            className="w-full pl-10 pr-10 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-white"
+                                            placeholder="Leave blank to keep current"
+                                            value={formData.password}
+                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="flex justify-end space-x-3 mt-6">

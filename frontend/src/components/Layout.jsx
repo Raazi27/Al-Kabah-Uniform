@@ -4,12 +4,45 @@ import { FiHome, FiUsers, FiShoppingBag, FiScissors, FiDollarSign, FiBarChart2, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import DotPattern from './react-bits/DotPattern';
+import CustomerLayout from './CustomerLayout';
 
 const Layout = () => {
     const { user, logout } = useAuth();
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    if (user?.role === 'customer') {
+        return <CustomerLayout />;
+    }
+
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+    const [sidebarOpen, setSidebarOpen] = useState(windowWidth >= 1024);
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Handle initial state and resize
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            setWindowWidth(width);
+            if (width >= 1024) {
+                setSidebarOpen(true);
+            } else {
+                setSidebarOpen(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        // Set initial state correctly
+        handleResize();
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Close sidebar on mobile when location changes
+    useEffect(() => {
+        if (windowWidth < 1024) {
+            setSidebarOpen(false);
+        }
+    }, [location.pathname, windowWidth]);
 
     // Theme State
     const [theme, setTheme] = useState(() => {
@@ -80,13 +113,13 @@ const Layout = () => {
 
             {/* Sidebar */}
             <AnimatePresence>
-                {(sidebarOpen || window.innerWidth >= 1024) && (
+                {(sidebarOpen || windowWidth >= 1024) && (
                     <motion.aside
                         initial={{ x: -300, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: -300, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                        className={`fixed lg:relative z-40 h-full w-[280px] p-4 ${window.innerWidth < 1024 ? 'shadow-2xl' : ''}`}
+                        className={`fixed lg:relative z-40 h-full w-[280px] p-4 ${windowWidth < 1024 ? 'shadow-2xl' : ''}`}
                     >
                         <div className="h-full w-full bg-[#1e1b4b]/95 backdrop-blur-xl border border-white/5 rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] flex flex-col p-6 overflow-hidden relative">
                             {/* Abstract Shapes */}
@@ -103,9 +136,9 @@ const Layout = () => {
                                         <p className="text-slate-400 text-xs font-medium">Uniforms & Tailoring</p>
                                     </div>
                                 </Link>
-                                {window.innerWidth < 1024 && (
-                                    <button onClick={() => setSidebarOpen(false)} className="ml-auto text-slate-400 hover:text-white">
-                                        <FiX />
+                                {windowWidth < 1024 && (
+                                    <button onClick={() => setSidebarOpen(false)} className="ml-auto text-slate-400 hover:text-white p-2">
+                                        <FiX size={20} />
                                     </button>
                                 )}
                             </div>

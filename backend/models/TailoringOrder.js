@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const tailoringOrderSchema = new mongoose.Schema({
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
@@ -19,4 +19,4 @@ const tailoringOrderSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('TailoringOrder', tailoringOrderSchema);
+export default mongoose.model('TailoringOrder', tailoringOrderSchema);

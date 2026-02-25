@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js';
+import Customer from '../models/Customer.js';
+import { verifyToken, isAdmin } from '../middleware/auth.js';
+
 const router = express.Router();
-const User = require('../models/User');
-const { verifyToken, isAdmin } = require('../middleware/auth');
 
 // Get all users (Admin only)
 router.get('/', verifyToken, isAdmin, async (req, res) => {
@@ -23,7 +25,7 @@ router.put('/:id', verifyToken, isAdmin, async (req, res) => {
 
         // Fetch requester to check if they are Super Admin
         const requester = await User.findById(req.user._id);
-        const SUPER_ADMIN = 'farmanraazi2006@gmail.com';
+        const SUPER_ADMIN = process.env.ADMIN_EMAIL || 'farmanraazi2006@gmail.com';
 
         // Update fields
         if (name) userToUpdate.name = name;
@@ -54,7 +56,7 @@ router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        const SUPER_ADMIN = 'farmanraazi2006@gmail.com';
+        const SUPER_ADMIN = process.env.ADMIN_EMAIL || 'farmanraazi2006@gmail.com';
         if (user.email === SUPER_ADMIN) {
             return res.status(403).json({ message: 'Cannot delete Super Admin' });
         }
@@ -63,7 +65,6 @@ router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
 
         // If user was a customer, delete their customer profile too
         if (user.role === 'customer') {
-            const Customer = require('../models/Customer');
             await Customer.findOneAndDelete({ userId: req.params.id });
         }
 
@@ -73,4 +74,4 @@ router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

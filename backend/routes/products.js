@@ -1,14 +1,31 @@
-const express = require('express');
+import express from 'express';
+import Product from '../models/Product.js';
+import Counter from '../models/Counter.js';
+import bwipjs from 'bwip-js';
+import multer from 'multer';
+import path from 'path';
+import { verifyToken, isAdmin, isBilling } from '../middleware/auth.js';
+
 const router = express.Router();
-const Product = require('../models/Product');
-const Counter = require('../models/Counter');
-const bwipjs = require('bwip-js');
-const { verifyToken, isAdmin, isBilling } = require('../middleware/auth');
+
+// Multer Config
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/products/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage });
 
 // Add Product
-router.post('/', verifyToken, isAdmin, async (req, res) => {
+router.post('/', verifyToken, isAdmin, upload.single('image'), async (req, res) => {
+    console.log('[DEBUG] POST /api/products - Body:', req.body);
+    console.log('[DEBUG] POST /api/products - File:', req.file);
     try {
-        const { name, category, size, price, stock, lowStockAlert } = req.body;
+        const { name, school, category, subCategory, size, price, stock, lowStockAlert, isUpcoming, releaseDate } = req.body;
+        const image = req.file ? `/uploads/products/${req.file.filename}` : '';
 
         // Generate Product ID
         try {
@@ -21,7 +38,11 @@ router.post('/', verifyToken, isAdmin, async (req, res) => {
         const productId = 'PROD' + (counter.seq || '0').toString().padStart(4, '0');
         const barcode = productId;
 
-        const product = new Product({ productId, barcode, name, category, size, price, stock, lowStockAlert });
+        const product = new Product({
+            productId, barcode, name, school, category, subCategory, image, size, price, stock, lowStockAlert,
+            isUpcoming: isUpcoming === 'true' || isUpcoming === true,
+            releaseDate: releaseDate || null
+        });
         await product.save();
         res.status(201).json(product);
     } catch (err) {
@@ -56,10 +77,23 @@ router.get('/search', async (req, res) => {
     }
 });
 
-// Update stock (Admin or Billing can update)
-router.put('/:id', verifyToken, isBilling, async (req, res) => {
+// Update Product (Admin only)
+router.put('/:id', verifyToken, isAdmin, upload.single('image'), async (req, res) => {
+    console.log('[DEBUG] PUT /api/products - ID:', req.params.id);
+    console.log('[DEBUG] PUT /api/products - Body:', req.body);
+    console.log('[DEBUG] PUT /api/products - File:', req.file);
     try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updateData = { ...req.body };
+        if (req.file) {
+            updateData.image = `/uploads/products/${req.file.filename}`;
+        }
+
+        // Handle boolean conversion if coming from FormData
+        if (updateData.isUpcoming !== undefined) {
+            updateData.isUpcoming = updateData.isUpcoming === 'true' || updateData.isUpcoming === true;
+        }
+
+        const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
         if (!product) return res.status(404).json({ message: 'Product not found' });
         res.json(product);
     } catch (err) {
@@ -103,4 +137,4 @@ router.delete('/:id', verifyToken, isAdmin, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

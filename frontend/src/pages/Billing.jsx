@@ -57,9 +57,9 @@ const Billing = () => {
     const total = subtotal + tax;
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]">
+        <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-100px)]">
             {/* Left: Product Selection */}
-            <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-none border border-slate-100 dark:border-slate-700 p-4 flex flex-col transition-colors">
+            <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow dark:shadow-none border border-slate-100 dark:border-slate-700 p-4 flex flex-col transition-colors min-h-[400px]">
                 <div className="mb-4 relative">
                     <FiSearch className="absolute left-3 top-3 text-gray-400" />
                     <input
@@ -72,7 +72,7 @@ const Billing = () => {
                     />
                 </div>
 
-                <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-4 p-2">
+                <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-2">
                     {products.map(product => (
                         <motion.div
                             key={product._id}
@@ -81,12 +81,12 @@ const Billing = () => {
                             onClick={() => addToCart(product)}
                             className="bg-gray-50 dark:bg-slate-700 p-4 rounded-lg border border-slate-200 dark:border-slate-600 cursor-pointer hover:bg-blue-50 dark:hover:bg-slate-600/80 transition-colors"
                         >
-                            <h3 className="font-bold text-gray-800 dark:text-white">{product.name}</h3>
-                            <p className="text-sm text-gray-500 dark:text-slate-300">{product.category}</p>
+                            <h3 className="font-bold text-gray-800 dark:text-white text-sm sm:text-base">{product.name}</h3>
+                            <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-300">{product.category}</p>
                             <div className="flex justify-between items-center mt-2">
                                 <span className="font-bold text-primary-600 dark:text-primary-400">₹{product.price}</span>
-                                <span className={`text-xs px-2 py-1 rounded ${product.stock < 10 ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'}`}>
-                                    Items: {product.stock}
+                                <span className={`text-[10px] px-2 py-1 rounded ${product.stock < 10 ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'}`}>
+                                    In Stock: {product.stock}
                                 </span>
                             </div>
                         </motion.div>
