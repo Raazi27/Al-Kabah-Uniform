@@ -36,7 +36,7 @@ const Profile = () => {
     const fetchProfile = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('https://al-kabah-uniform.vercel.app/api/auth/profile', {
+            const res = await axios.get('/api/auth/profile', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = res.data;
@@ -77,7 +77,7 @@ const Profile = () => {
         if (preview) return preview;
         if (profile.profilePicture && typeof profile.profilePicture === 'string') {
             const cleanPath = profile.profilePicture.replace(/\\/g, '/');
-            return `https://al-kabah-uniform.vercel.app/${cleanPath}`;
+            return `/${cleanPath}`;
         }
         return null; // Should trigger fallback
     };
@@ -107,7 +107,7 @@ const Profile = () => {
             if (profile.password) formData.append('password', profile.password);
             if (file) formData.append('profilePicture', file);
 
-            const res = await axios.put('https://al-kabah-uniform.vercel.app/api/auth/profile', formData, {
+            const res = await axios.put('/api/auth/profile', formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

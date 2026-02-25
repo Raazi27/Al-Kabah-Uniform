@@ -25,7 +25,7 @@ const AdminUsers = () => {
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('https://al-kabah-uniform.vercel.app/api/users', {
+            const res = await axios.get('/api/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUsers(res.data);
@@ -44,7 +44,7 @@ const AdminUsers = () => {
             if (!payload.password) delete payload.password; // Don't send empty password
 
             if (editingId) {
-                const res = await axios.put(`https://al-kabah-uniform.vercel.app/api/users/${editingId}`, payload, {
+                const res = await axios.put(`/api/users/${editingId}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setUsers(users.map(u => u._id === editingId ? { ...u, ...res.data.user } : u)); // Backend returns { message, user }
@@ -60,7 +60,7 @@ const AdminUsers = () => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`https://al-kabah-uniform.vercel.app/api/users/${id}`, {
+                await axios.delete(`/api/users/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setUsers(users.filter(u => u._id !== id));

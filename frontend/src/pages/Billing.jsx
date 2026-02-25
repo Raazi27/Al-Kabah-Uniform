@@ -15,7 +15,7 @@ const Billing = () => {
         // Fetch products or mock
         const fetchProducts = async () => {
             try {
-                const res = await axios.get(`https://al-kabah-uniform.vercel.app/api/products/search?query=${query}`);
+                const res = await axios.get(`/api/products/search?query=${query}`);
                 setProducts(res.data);
             } catch (err) {
                 // Mock products

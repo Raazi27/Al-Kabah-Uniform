@@ -22,7 +22,7 @@ const Customers = () => {
 
     const fetchCustomers = async () => {
         try {
-            const res = await axios.get('https://al-kabah-uniform.vercel.app/api/customers' + (query ? `/search?query=${query}` : ''));
+            const res = await axios.get('/api/customers' + (query ? `/search?query=${query}` : ''));
             setCustomers(res.data);
             setLoading(false);
         } catch (err) {
@@ -35,11 +35,11 @@ const Customers = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                const res = await axios.put(`https://al-kabah-uniform.vercel.app/api/customers/${editingId}`, formData);
+                const res = await axios.put(`/api/customers/${editingId}`, formData);
                 setCustomers(customers.map(c => c._id === editingId ? res.data : c));
                 alert('Customer Updated Successfully!');
             } else {
-                const res = await axios.post('https://al-kabah-uniform.vercel.app/api/customers', formData);
+                const res = await axios.post('/api/customers', formData);
                 setCustomers([res.data, ...customers]);
                 alert('Customer Added Successfully!');
             }

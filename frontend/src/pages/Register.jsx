@@ -49,7 +49,7 @@ const Register = () => {
 
         setSendingOtp(true);
         try {
-            const res = await axios.post('https://al-kabah-uniform.vercel.app/api/auth/register-otp', {
+            const res = await axios.post('/api/auth/register-otp', {
                 email: formData.email
             });
             setIsOtpSent(true);
@@ -73,7 +73,7 @@ const Register = () => {
         }
 
         try {
-            await axios.post('https://al-kabah-uniform.vercel.app/api/auth/register', {
+            await axios.post('/api/auth/register', {
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,

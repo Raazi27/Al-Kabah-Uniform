@@ -10,7 +10,7 @@ import axios from 'axios';
 const CustomerDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const API_BASE = window.location.hostname === 'localhost' ? 'https://al-kabah-uniform.vercel.app' : `http://${window.location.hostname}:5000`;
+    const API_BASE = window.location.hostname === 'localhost' ? '' : `http://${window.location.hostname}:5000`;
 
     const [stats, setStats] = useState({
         orders: 0,

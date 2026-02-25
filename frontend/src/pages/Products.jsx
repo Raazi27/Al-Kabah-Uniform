@@ -21,7 +21,7 @@ const Products = () => {
     const [editingId, setEditingId] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
-    const API_BASE = window.location.hostname === 'localhost' ? 'https://al-kabah-uniform.vercel.app' : `http://${window.location.hostname}:5000`;
+    const API_BASE = window.location.hostname === 'localhost' ? '' : `http://${window.location.hostname}:5000`;
     const [formData, setFormData] = useState({
         name: '',
         school: '',
