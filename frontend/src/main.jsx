@@ -1,25 +1,35 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Customers from './pages/Customers'
-import Products from './pages/Products'
-import Billing from './pages/Billing'
-import Tailoring from './pages/Tailoring'
-import Reports from './pages/Reports'
+
+// Dynamic imports for pages
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Customers = lazy(() => import('./pages/Customers'))
+const Products = lazy(() => import('./pages/Products'))
+const Billing = lazy(() => import('./pages/Billing'))
+const Tailoring = lazy(() => import('./pages/Tailoring'))
+const Reports = lazy(() => import('./pages/Reports'))
+const AdminUsers = lazy(() => import('./pages/AdminUsers'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const PendingOrders = lazy(() => import('./pages/PendingOrders'))
+const Profile = lazy(() => import('./pages/Profile'))
+
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
-import AdminUsers from './pages/AdminUsers'
-import Checkout from './pages/Checkout'
-import ForgotPassword from './pages/ForgotPassword'
-import PendingOrders from './pages/PendingOrders'
-import Profile from './pages/Profile'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import './index.css'
+
+// Loading component
+const PageLoader = () => (
+    <div className="flex items-center justify-center min-h-screen bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+    </div>
+)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -27,30 +37,32 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <AuthProvider>
                 <CartProvider>
                     <SpeedInsights />
-                    <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route
-                            path="/"
-                            element={
-                                <ProtectedRoute>
-                                    <Layout />
-                                </ProtectedRoute>
-                            }
-                        >
-                            <Route index element={<Dashboard />} />
-                            <Route path="customers" element={<Customers />} />
-                            <Route path="products" element={<Products />} />
-                            <Route path="billing" element={<Billing />} />
-                            <Route path="tailoring" element={<Tailoring />} />
-                            <Route path="reports" element={<Reports />} />
-                            <Route path="users" element={<AdminUsers />} />
-                            <Route path="checkout" element={<Checkout />} />
-                            <Route path="pending-orders" element={<PendingOrders />} />
-                            <Route path="profile" element={<Profile />} />
-                        </Route>
-                    </Routes>
+                    <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route
+                                path="/"
+                                element={
+                                    <ProtectedRoute>
+                                        <Layout />
+                                    </ProtectedRoute>
+                                }
+                            >
+                                <Route index element={<Dashboard />} />
+                                <Route path="customers" element={<Customers />} />
+                                <Route path="products" element={<Products />} />
+                                <Route path="billing" element={<Billing />} />
+                                <Route path="tailoring" element={<Tailoring />} />
+                                <Route path="reports" element={<Reports />} />
+                                <Route path="users" element={<AdminUsers />} />
+                                <Route path="checkout" element={<Checkout />} />
+                                <Route path="pending-orders" element={<PendingOrders />} />
+                                <Route path="profile" element={<Profile />} />
+                            </Route>
+                        </Routes>
+                    </Suspense>
                 </CartProvider>
             </AuthProvider>
         </BrowserRouter>
