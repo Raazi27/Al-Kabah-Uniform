@@ -21,6 +21,8 @@ export default defineConfig({
     },
 
     build: {
+        outDir: '../public',
+        emptyOutDir: true,
         target: 'esnext',
         minify: 'esbuild',
 
