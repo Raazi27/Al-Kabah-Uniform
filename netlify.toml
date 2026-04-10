@@ -1,0 +1,11 @@
+[build]
+  command = "npm install && npm --workspace tailoring-system-frontend run build"
+  publish = "dist"
+
+[functions]
+  directory = "backend" # Tells Netlify where your server code lives
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server/:splat"
+  status = 200
